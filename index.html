@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FORMA | Curated Objects</title>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        const products = [
+          { id: 1, name: "Obsidian Desk Lamp", price: 89, category: "Lighting", emoji: "🪔", tag: "Bestseller" },
+          { id: 2, name: "Linen Throw Pillow", price: 42, category: "Textiles", emoji: "🛋️", tag: "New" },
+          { id: 3, name: "Ceramic Pour-Over", price: 58, category: "Kitchen", emoji: "☕", tag: null },
+          { id: 4, name: "Walnut Tray Set", price: 74, category: "Storage", emoji: "🟫", tag: "Sale" },
+          { id: 5, name: "Matte Steel Pen", price: 31, category: "Stationery", emoji: "🖊️", tag: null },
+          { id: 6, name: "Boucle Armchair", price: 349, category: "Furniture", emoji: "🪑", tag: "Bestseller" },
+          { id: 7, name: "Geometric Vase", price: 63, category: "Decor", emoji: "🏺", tag: "New" },
+          { id: 8, name: "Marble Coaster Set", price: 38, category: "Kitchen", emoji: "⬜", tag: null },
+        ];
+
+        const tagColors = {
+          Bestseller: { bg: "#f5e6c8", color: "#8b5e0a" },
+          New: { bg: "#c8f5e6", color: "#0a6b44" },
+          Sale: { bg: "#f5c8c8", color: "#8b0a0a" },
+        };
+
+        function App() {
+          const [cart, setCart] = useState({});
+          const [view, setView] = useState("shop");
+          const [added, setAdded] = useState(null);
+          const [filter, setFilter] = useState("All");
+
+          const categories = ["All", ...new Set(products.map((p) => p.category))];
+          const filtered = filter === "All" ? products : products.filter((p) => p.category === filter);
+
+          const addToCart = (product) => {
+            setCart((prev) => ({ ...prev, [product.id]: (prev[product.id] || 0) + 1 }));
+            setAdded(product.id);
+            setTimeout(() => setAdded(null), 700);
+          };
+
+          const updateQty = (id, delta) => {
+            setCart((prev) => {
+              const next = { ...prev };
+              next[id] = (next[id] || 0) + delta;
+              if (next[id] <= 0) delete next[id];
+              return next;
+            });
+          };
+
+          const cartCount = Object.values(cart).reduce((a, b) => a + b, 0);
+          const cartItems = Object.entries(cart).map(([id, qty]) => ({ ...products.find((p) => p.id === +id), qty }));
+          const subtotal = cartItems.reduce((sum, i) => sum + i.price * i.qty, 0);
+          const shipping = subtotal > 150 ? 0 : 12;
+          const total = subtotal + shipping;
+
+          return (
+            <div style={{ fontFamily: "'Playfair Display', Georgia, serif", background: "#f7f5f0", minHeight: "100vh", color: "#1a1612" }}>
+              <style>{`
+                @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;700&family=DM+Sans:wght@300;400;500&display=swap');
+                * { box-sizing: border-box; margin: 0; padding: 0; }
+                .product-card { background: #fff; border-radius: 2px; padding: 28px 24px 22px; position: relative; transition: transform 0.2s, box-shadow 0.2s; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+                .product-card:hover { transform: translateY(-4px); box-shadow: 0 8px 28px rgba(0,0,0,0.10); }
+                .add-btn { background: #1a1612; color: #f7f5f0; border: none; padding: 10px 20px; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; cursor: pointer; width: 100%; }
+                .add-btn.popped { background: #2d6a4f; }
+                .cat-btn { background: transparent; border: 1px solid #c8c2b8; padding: 6px 16px; font-family: 'DM Sans', sans-serif; font-size: 13px; cursor: pointer; border-radius: 30px; }
+                .cat-btn.active { background: #1a1612; color: #f7f5f0; }
+                .badge { background: #c0392b; color: #fff; border-radius: 50%; width: 18px; height: 18px; font-size: 10px; position: absolute; top: -6px; right: -6px; display: flex; align-items: center; justify-content: center; }
+                .checkout-btn { background: #1a1612; color: #f7f5f0; border: none; padding: 14px; width: 100%; cursor: pointer; }
+              `}</style>
+
+              <header style={{ background: "#fff", borderBottom: "1px solid #e5e0d8", padding: "18px 40px", display: "flex", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 100 }}>
+                <div><div style={{ fontSize: 22, fontWeight: 700 }}>FORMA</div></div>
+                <div style={{ display: "flex", gap: 12 }}>
+                  <button onClick={() => setView("shop")} style={{ padding: "8px 16px", cursor: "pointer" }}>Shop</button>
+                  <button onClick={() => setView("cart")} style={{ padding: "8px 16px", cursor: "pointer", position: "relative" }}>
+                    Cart {cartCount > 0 && <span className="badge">{cartCount}</span>}
+                  </button>
+                </div>
+              </header>
+
+              <main style={{ maxWidth: 1100, margin: "0 auto", padding: "40px 24px" }}>
+                {view === "shop" ? (
+                  <>
+                    <h1 style={{ fontSize: 48, marginBottom: 20 }}>Curated Objects.</h1>
+                    <div style={{ display: "flex", gap: 8, marginBottom: 32 }}>
+                      {categories.map(c => (
+                        <button key={c} className={`cat-btn ${filter === c ? "active" : ""}`} onClick={() => setFilter(c)}>{c}</button>
+                      ))}
+                    </div>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: 20 }}>
+                      {filtered.map(p => (
+                        <div key={p.id} className="product-card">
+                          <div style={{ fontSize: 44 }}>{p.emoji}</div>
+                          <h3>{p.name}</h3>
+                          <p>${p.price}</p>
+                          <button className={`add-btn ${added === p.id ? "popped" : ""}`} onClick={() => addToCart(p)}>
+                            {added === p.id ? "Added!" : "Add to Cart"}
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                ) : (
+                  <div>
+                    <h2>Your Cart</h2>
+                    {cartItems.map(item => (
+                      <div key={item.id} style={{ display: "flex", justifyContent: "space-between", padding: "10px 0", borderBottom: "1px solid #ddd" }}>
+                        <span>{item.name} (x{item.qty})</span>
+                        <span>${item.price * item.qty}</span>
+                      </div>
+                    ))}
+                    <div style={{ marginTop: 20, textAlign: "right" }}>
+                      <h3>Total: ${total}</h3>
+                      <button className="checkout-btn">Checkout</button>
+                    </div>
+                  </div>
+                )}
+              </main>
+            </div>
+          );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
